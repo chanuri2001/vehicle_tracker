@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Vehicle? _selectedVehicle;
   bool _showDevicesList = true;
   bool _showVehicleNumbers = false;
+  bool _expandedDevicesList = false;
 
   String? _vehicleNumberFilter;
   String? _locationFilter;
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  final ScrollController _statusDetailsScrollController = ScrollController();
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _statusDetailsScrollController.dispose();
     super.dispose();
   }
 
@@ -147,6 +150,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _toggleExpandedDevicesList() {
+    setState(() {
+      _expandedDevicesList = !_expandedDevicesList;
+    });
+  }
+
   Widget _buildMapScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFF0558A7),
@@ -175,6 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(height: 1.0, color: Colors.white),
+        ),
       ),
       body:
           _isLoading
@@ -341,103 +354,77 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
 
                               // Bottom devices panel
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      color: const Color(0xFF0558A7),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text(
-                                            'My Devices',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                              if (_showDevicesList)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        color: const Color(0xFF0558A7),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'My Devices',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          Row(
-                                            children: [
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.add,
-                                                  color: Colors.white,
-                                                  size: 20,
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: Icon(
+                                                    _expandedDevicesList
+                                                        ? Icons.fullscreen_exit
+                                                        : Icons.fullscreen,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                  constraints:
+                                                      const BoxConstraints(),
+                                                  padding: EdgeInsets.zero,
+                                                  onPressed:
+                                                      _toggleExpandedDevicesList,
                                                 ),
-                                                constraints:
-                                                    const BoxConstraints(),
-                                                padding: EdgeInsets.zero,
-                                                onPressed: () {},
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.edit,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                                constraints:
-                                                    const BoxConstraints(),
-                                                padding: EdgeInsets.zero,
-                                                onPressed: () {},
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.close,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                                constraints:
-                                                    const BoxConstraints(),
-                                                padding: EdgeInsets.zero,
-                                                onPressed: () {
-                                                  setState(() {
-                                                    _showDevicesList = false;
-                                                  });
-                                                },
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.people,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                                constraints:
-                                                    const BoxConstraints(),
-                                                padding: EdgeInsets.zero,
-                                                onPressed: () {},
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                                
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Container(
-                                      height: 120,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
+                                      Container(
+                                        height:
+                                            _expandedDevicesList
+                                                ? MediaQuery.of(
+                                                      context,
+                                                    ).size.height *
+                                                    0.7
+                                                : 120,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.white,
+                                        ),
+                                        child: ListView(
+                                          padding: EdgeInsets.zero,
+                                          children: [
+                                            _buildDeviceListHeader(),
+                                            ..._filteredVehicles.map(
+                                              (vehicle) =>
+                                                  _buildDeviceListItem(vehicle),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      child: ListView(
-                                        padding: EdgeInsets.zero,
-                                        children: [
-                                          _buildDeviceListHeader(),
-                                          ..._filteredVehicles.map(
-                                            (vehicle) =>
-                                                _buildDeviceListItem(vehicle),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -445,16 +432,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
 
-                  // Status details panel (sliding from right)
+                  // Status details panel (full map view height)
                   if (_showStatusPanel && _selectedVehicle != null)
                     Positioned(
-                      top:
-                          kToolbarHeight +
-                          20, // Added space between header and status panel
+                      top: 0,
                       right: 0,
                       bottom:
-                          MediaQuery.of(context).size.height *
-                          0.3, // Make panel smaller in length
+                          _showDevicesList
+                              ? (_expandedDevicesList
+                                  ? MediaQuery.of(context).size.height * 0.7
+                                  : 120)
+                              : 0, // Account for the devices list height
                       width: MediaQuery.of(context).size.width * 0.7,
                       child: _buildStatusDetailsPanel(_selectedVehicle!),
                     ),
@@ -612,37 +600,69 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildStatusDetailItem('Parameter', 'Value', isHeader: true),
-                  _buildStatusDetailItem('Valid', 'Yes'),
-                  _buildStatusDetailItem('Trip Odometer', '0.44 km'),
-                  _buildStatusDetailItem('Total Distance', '16178.14 km'),
-                  _buildStatusDetailItem(
-                    'Time',
-                    '${DateTime.now().hour}:${DateTime.now().minute} pm',
-                  ),
-                  _buildStatusDetailItem('Speed', '6.0 km/h', highlight: true),
-                  _buildStatusDetailItem('Satellites', '19'),
-                  _buildStatusDetailItem('RSSI', '4'),
-                  _buildStatusDetailItem('Protocol', 'teltonika'),
-                  _buildStatusDetailItem('Priority', '0'),
-                  _buildStatusDetailItem('Power', '14.04 V'),
-                  _buildStatusDetailItem('Out1', 'No'),
-                  _buildStatusDetailItem('Odometer', '120561.31 km'),
-                  _buildStatusDetailItem('Motion', 'Yes'),
-                  _buildStatusDetailItem('Longitude', '74.098453°'),
-                  _buildStatusDetailItem('Latitude', '31.677668°'),
-                  _buildStatusDetailItem('Io69', '1'),
-                  _buildStatusDetailItem('Io200', '0'),
-                  _buildStatusDetailItem('Io113', '84'),
-                  _buildStatusDetailItem('Ignition', 'Yes'),
-                ],
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                scrollbarTheme: ScrollbarThemeData(
+                  thickness: MaterialStateProperty.all(6.0),
+                  thumbColor: MaterialStateProperty.all(Colors.grey.shade400),
+                  radius: const Radius.circular(10.0),
+                  minThumbLength: 80.0,
+                  trackVisibility: MaterialStateProperty.all(true),
+                  trackColor: MaterialStateProperty.all(Colors.grey.shade200),
+                ),
+              ),
+              child: Scrollbar(
+                controller: _statusDetailsScrollController,
+                thickness: 6.0,
+                radius: const Radius.circular(10.0),
+                thumbVisibility: true,
+                trackVisibility: true,
+                child: ListView(
+                  controller: _statusDetailsScrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _buildStatusDetailItem(
+                      'Parameter',
+                      'Value',
+                      isHeader: true,
+                    ),
+                    _buildStatusDetailItem('Valid', 'Yes'),
+                    _buildStatusDetailItem('Trip Odometer', '0.44 km'),
+                    _buildStatusDetailItem('Total Distance', '16178.14 km'),
+                    _buildStatusDetailItem(
+                      'Time',
+                      '${DateTime.now().hour}:${DateTime.now().minute} pm',
+                    ),
+                    _buildStatusDetailItem(
+                      'Speed',
+                      '6.0 km/h',
+                      highlight: true,
+                    ),
+                    _buildStatusDetailItem('Satellites', '19'),
+                    _buildStatusDetailItem('RSSI', '4'),
+                    _buildStatusDetailItem('Protocol', 'teltonika'),
+                    _buildStatusDetailItem('Priority', '0'),
+                    _buildStatusDetailItem('Power', '14.04 V'),
+                    _buildStatusDetailItem('Out1', 'No'),
+                    _buildStatusDetailItem('Odometer', '120561.31 km'),
+                    _buildStatusDetailItem('Motion', 'Yes'),
+                    _buildStatusDetailItem('Longitude', '74.098453°'),
+                    _buildStatusDetailItem('Latitude', '31.677668°'),
+                    _buildStatusDetailItem('Io69', '1'),
+                    _buildStatusDetailItem('Io200', '0'),
+                    _buildStatusDetailItem('Io113', '84'),
+                    _buildStatusDetailItem('Ignition', 'Yes'),
+                    _buildStatusDetailItem('Engine', 'On'),
+                    _buildStatusDetailItem('Fuel Level', '68%'),
+                    _buildStatusDetailItem('Battery', 'Good'),
+                    _buildStatusDetailItem('Last Service', '245 km ago'),
+                    _buildStatusDetailItem('Next Service Due', 'In 755 km'),
+                  ],
+                ),
               ),
             ),
           ),
-          // Removed the "My Devices" section at the bottom of the status details panel
         ],
       ),
     );
